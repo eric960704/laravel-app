@@ -15,7 +15,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./src:/var/www/html:delegated
+      - .:/var/www/html:delegated
     depends_on:
       - php
       - redis
@@ -30,13 +30,13 @@ services:
     tty: true
     ports:
       - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
     environment:
-      MYSQL_DATABASE: homestead
-      MYSQL_USER: homestead
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: secret
-      SERVICE_TAGS: dev
-      SERVICE_NAME: mysql
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
     networks:
       - laravel
 
@@ -50,18 +50,21 @@ services:
     ports:
       - "9000:9000"
     volumes:
-      - ./src:/var/www/html:delegated
+      - .:/var/www/html:delegated
     networks:
       - laravel
 
   redis:
     image: redis:alpine
-    restart: unless-stopped
+    container_name: redis
+    restart: always
     ports:
       - "6379:6379"
+    volumes:
+      - ./data/redis:/data
     networks:
       - laravel
-
+      
   composer:
     build:
       context: ./dockerfiles
@@ -70,17 +73,17 @@ services:
         - UID=${UID:-1000}
         - GID=${GID:-1000}
     volumes:
-      - ./src:/var/www/html
+      - .:/var/www/html
     depends_on:
       - php
-    entrypoint: [ 'composer', '--ignore-platform-reqs' ]
+    entrypoint: [ 'composer' ]
     networks:
       - laravel
 
   npm:
     image: node:current-alpine
     volumes:
-      - ./src:/var/www/html
+      - .:/var/www/html
     ports:
       - "3000:3000"
       - "3001:3001"
@@ -98,10 +101,10 @@ services:
         - UID=${UID:-1000}
         - GID=${GID:-1000}
     volumes:
-      - ./src:/var/www/html:delegated
+      - .:/var/www/html:delegated
     depends_on:
       - mysql
-    entrypoint: [ 'php', '/var/www/html/artisan' ]
+    entrypoint: [ 'php', 'artisan' ]
     networks:
       - laravel
 
